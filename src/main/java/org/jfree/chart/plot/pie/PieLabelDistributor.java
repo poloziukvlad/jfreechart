@@ -141,9 +141,9 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
             PieLabelRecord current = getPieLabelRecord(i);
             PieLabelRecord next = getPieLabelRecord(i + 1);
             if (next.getLowerY() < current.getUpperY()) {
-                double lowestAllowedY = minY + height - next.getLabelHeight() / 2.0;
+                double lowestAllowedY = minY + height - halfHeight(next);
                 double stackedBelowCurrent = current.getUpperY() + this.minGap
-                        + next.getLabelHeight() / 2.0;
+                        + halfHeight(next);
                 next.setAllocatedY(Math.min(lowestAllowedY, stackedBelowCurrent));
             }
         }
@@ -161,9 +161,9 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
             PieLabelRecord current = getPieLabelRecord(i);
             PieLabelRecord previous = getPieLabelRecord(i - 1);
             if (previous.getUpperY() > current.getLowerY()) {
-                double highestAllowedY = minY + previous.getLabelHeight() / 2.0;
+                double highestAllowedY = minY + halfHeight(previous);
                 double stackedAboveCurrent = current.getLowerY() - this.minGap
-                        - previous.getLabelHeight() / 2.0;
+                        - halfHeight(previous);
                 previous.setAllocatedY(Math.max(highestAllowedY, stackedAboveCurrent));
             }
         }
@@ -188,10 +188,22 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
         }
         for (int i = 0; i < this.labels.size(); i++) {
             PieLabelRecord record = getPieLabelRecord(i);
-            cursorY = cursorY + record.getLabelHeight() / 2.0;
+            cursorY = cursorY + halfHeight(record);
             record.setAllocatedY(cursorY);
-            cursorY = cursorY + record.getLabelHeight() / 2.0 + gap;
+            cursorY = cursorY + halfHeight(record) + gap;
         }
+    }
+
+    /**
+     * Returns half of the height of the given label record. Extracted to
+     * remove the repeated {@code getLabelHeight() / 2.0} expression.
+     *
+     * @param record  the label record.
+     *
+     * @return Half of the label height (in Java2D units).
+     */
+    private static double halfHeight(PieLabelRecord record) {
+        return record.getLabelHeight() / 2.0;
     }
 
     /**
