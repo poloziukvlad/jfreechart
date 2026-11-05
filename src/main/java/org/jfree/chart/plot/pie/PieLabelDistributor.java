@@ -44,8 +44,11 @@ import java.util.Collections;
  */
 public class PieLabelDistributor extends AbstractPieLabelDistributor {
 
+    /** The default minimum gap between two adjacent labels (in Java2D units). */
+    private static final double DEFAULT_MINIMUM_GAP = 4.0;
+
     /** The minimum gap. */
-    private double minGap = 4.0;
+    private double minGap = DEFAULT_MINIMUM_GAP;
 
     /**
      * Creates a new distributor.
@@ -138,10 +141,10 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
             PieLabelRecord current = getPieLabelRecord(i);
             PieLabelRecord next = getPieLabelRecord(i + 1);
             if (next.getLowerY() < current.getUpperY()) {
-                next.setAllocatedY(Math.min(minY + height
-                        - next.getLabelHeight() / 2.0,
-                        current.getUpperY() + this.minGap
-                        + next.getLabelHeight() / 2.0));
+                double lowestAllowedY = minY + height - next.getLabelHeight() / 2.0;
+                double stackedBelowCurrent = current.getUpperY() + this.minGap
+                        + next.getLabelHeight() / 2.0;
+                next.setAllocatedY(Math.min(lowestAllowedY, stackedBelowCurrent));
             }
         }
     }
@@ -158,9 +161,10 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
             PieLabelRecord current = getPieLabelRecord(i);
             PieLabelRecord previous = getPieLabelRecord(i - 1);
             if (previous.getUpperY() > current.getLowerY()) {
-                previous.setAllocatedY(Math.max(minY
-                        + previous.getLabelHeight() / 2.0, current.getLowerY()
-                        - this.minGap - previous.getLabelHeight() / 2.0));
+                double highestAllowedY = minY + previous.getLabelHeight() / 2.0;
+                double stackedAboveCurrent = current.getLowerY() - this.minGap
+                        - previous.getLabelHeight() / 2.0;
+                previous.setAllocatedY(Math.max(highestAllowedY, stackedAboveCurrent));
             }
         }
     }
