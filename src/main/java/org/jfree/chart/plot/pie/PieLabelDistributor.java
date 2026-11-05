@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
  * USA.
  *
- * [Oracle and Java are registered trademarks of Oracle and/or its affiliates. 
+ * [Oracle and Java are registered trademarks of Oracle and/or its affiliates.
  * Other names may be trademarks of their respective owners.]
  *
  * ------------------------
@@ -65,7 +65,7 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
     @Override
     public void distributeLabels(double minY, double height) {
         sort();  // sorts the label records into ascending order by baseY
-        
+
         if (isOverlap()) {
             adjustDownwards(minY, height);
         }
@@ -87,13 +87,13 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
      * @return A boolean.
      */
     private boolean isOverlap() {
-        double y = 0.0;
+        double previousUpperY = 0.0;
         for (int i = 0; i < this.labels.size(); i++) {
-            PieLabelRecord plr = getPieLabelRecord(i);
-            if (y > plr.getLowerY()) {
+            PieLabelRecord current = getPieLabelRecord(i);
+            if (previousUpperY > current.getLowerY()) {
                 return true;
             }
-            y = plr.getUpperY();
+            previousUpperY = current.getUpperY();
         }
         return false;
     }
@@ -107,19 +107,19 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
         int upper = this.labels.size() - 1;
         while (upper > lower) {
             if (lower < upper - 1) {
-                PieLabelRecord r0 = getPieLabelRecord(lower);
-                PieLabelRecord r1 = getPieLabelRecord(lower + 1);
-                if (r1.getLowerY() < r0.getUpperY()) {
-                    double adjust = r0.getUpperY() - r1.getLowerY()
+                PieLabelRecord labelAbove = getPieLabelRecord(lower);
+                PieLabelRecord labelBelow = getPieLabelRecord(lower + 1);
+                if (labelBelow.getLowerY() < labelAbove.getUpperY()) {
+                    double adjust = labelAbove.getUpperY() - labelBelow.getLowerY()
                                     + this.minGap;
-                    r1.setAllocatedY(r1.getAllocatedY() + adjust);
+                    labelBelow.setAllocatedY(labelBelow.getAllocatedY() + adjust);
                 }
             }
-            PieLabelRecord r2 = getPieLabelRecord(upper - 1);
-            PieLabelRecord r3 = getPieLabelRecord(upper);
-            if (r2.getUpperY() > r3.getLowerY()) {
-                double adjust = (r2.getUpperY() - r3.getLowerY()) + this.minGap;
-                r3.setAllocatedY(r3.getAllocatedY() + adjust);
+            PieLabelRecord secondLast = getPieLabelRecord(upper - 1);
+            PieLabelRecord last = getPieLabelRecord(upper);
+            if (secondLast.getUpperY() > last.getLowerY()) {
+                double adjust = (secondLast.getUpperY() - last.getLowerY()) + this.minGap;
+                last.setAllocatedY(last.getAllocatedY() + adjust);
             }
             lower++;
             upper--;
@@ -135,13 +135,13 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
      */
     protected void adjustDownwards(double minY, double height) {
         for (int i = 0; i < this.labels.size() - 1; i++) {
-            PieLabelRecord record0 = getPieLabelRecord(i);
-            PieLabelRecord record1 = getPieLabelRecord(i + 1);
-            if (record1.getLowerY() < record0.getUpperY()) {
-                record1.setAllocatedY(Math.min(minY + height
-                        - record1.getLabelHeight() / 2.0,
-                        record0.getUpperY() + this.minGap
-                        + record1.getLabelHeight() / 2.0));
+            PieLabelRecord current = getPieLabelRecord(i);
+            PieLabelRecord next = getPieLabelRecord(i + 1);
+            if (next.getLowerY() < current.getUpperY()) {
+                next.setAllocatedY(Math.min(minY + height
+                        - next.getLabelHeight() / 2.0,
+                        current.getUpperY() + this.minGap
+                        + next.getLabelHeight() / 2.0));
             }
         }
     }
@@ -155,12 +155,12 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
      */
     protected void adjustUpwards(double minY, double height) {
         for (int i = this.labels.size() - 1; i > 0; i--) {
-            PieLabelRecord record0 = getPieLabelRecord(i);
-            PieLabelRecord record1 = getPieLabelRecord(i - 1);
-            if (record1.getUpperY() > record0.getLowerY()) {
-                record1.setAllocatedY(Math.max(minY
-                        + record1.getLabelHeight() / 2.0, record0.getLowerY()
-                        - this.minGap - record1.getLabelHeight() / 2.0));
+            PieLabelRecord current = getPieLabelRecord(i);
+            PieLabelRecord previous = getPieLabelRecord(i - 1);
+            if (previous.getUpperY() > current.getLowerY()) {
+                previous.setAllocatedY(Math.max(minY
+                        + previous.getLabelHeight() / 2.0, current.getLowerY()
+                        - this.minGap - previous.getLabelHeight() / 2.0));
             }
         }
     }
@@ -173,7 +173,7 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
      * @param height  the height available for all labels.
      */
     protected void spreadEvenly(double minY, double height) {
-        double y = minY;
+        double cursorY = minY;
         double sumOfLabelHeights = 0.0;
         for (int i = 0; i < this.labels.size(); i++) {
             sumOfLabelHeights += getPieLabelRecord(i).getLabelHeight();
@@ -184,9 +184,9 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
         }
         for (int i = 0; i < this.labels.size(); i++) {
             PieLabelRecord record = getPieLabelRecord(i);
-            y = y + record.getLabelHeight() / 2.0;
-            record.setAllocatedY(y);
-            y = y + record.getLabelHeight() / 2.0 + gap;
+            cursorY = cursorY + record.getLabelHeight() / 2.0;
+            record.setAllocatedY(cursorY);
+            cursorY = cursorY + record.getLabelHeight() / 2.0 + gap;
         }
     }
 
