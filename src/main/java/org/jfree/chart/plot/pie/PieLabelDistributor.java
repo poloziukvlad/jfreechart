@@ -69,17 +69,51 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
     public void distributeLabels(double minY, double height) {
         sort();  // sorts the label records into ascending order by baseY
 
+        LayoutSpace space = new LayoutSpace(minY, height);
+
         if (isOverlap()) {
-            adjustDownwards(minY, height);
+            adjustDownwards(space);
         }
 
         // if still overlapping, do something else...
         if (isOverlap()) {
-            adjustUpwards(minY, height);
+            adjustUpwards(space);
         }
 
         if (isOverlap()) {
-            spreadEvenly(minY, height);
+            spreadEvenly(space);
+        }
+    }
+
+    /**
+     * The available vertical space for laying out labels. Groups the
+     * {@code minY} and {@code height} parameters that were previously passed
+     * together to every adjustment method (Introduce Parameter Object).
+     */
+    private static final class LayoutSpace {
+
+        /** The y-coordinate for the top of the label area. */
+        private final double minY;
+
+        /** The height of the label area. */
+        private final double height;
+
+        LayoutSpace(double minY, double height) {
+            this.minY = minY;
+            this.height = height;
+        }
+
+        double getMinY() {
+            return this.minY;
+        }
+
+        double getHeight() {
+            return this.height;
+        }
+
+        /** @return The y-coordinate of the bottom of the label area. */
+        double getMaxY() {
+            return this.minY + this.height;
         }
     }
 
@@ -133,15 +167,14 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
      * Any labels that are overlapping are moved down in an attempt to
      * eliminate the overlaps.
      *
-     * @param minY  the minimum y value (in Java2D coordinate space).
-     * @param height  the height available for all labels.
+     * @param space  the available vertical layout space.
      */
-    protected void adjustDownwards(double minY, double height) {
+    protected void adjustDownwards(LayoutSpace space) {
         for (int i = 0; i < this.labels.size() - 1; i++) {
             PieLabelRecord current = getPieLabelRecord(i);
             PieLabelRecord next = getPieLabelRecord(i + 1);
             if (next.getLowerY() < current.getUpperY()) {
-                double lowestAllowedY = minY + height - halfHeight(next);
+                double lowestAllowedY = space.getMaxY() - halfHeight(next);
                 double stackedBelowCurrent = current.getUpperY() + this.minGap
                         + halfHeight(next);
                 next.setAllocatedY(Math.min(lowestAllowedY, stackedBelowCurrent));
@@ -153,15 +186,14 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
      * Any labels that are overlapping are moved up in an attempt to eliminate
      * the overlaps.
      *
-     * @param minY  the minimum y value (in Java2D coordinate space).
-     * @param height  the height available for all labels.
+     * @param space  the available vertical layout space.
      */
-    protected void adjustUpwards(double minY, double height) {
+    protected void adjustUpwards(LayoutSpace space) {
         for (int i = this.labels.size() - 1; i > 0; i--) {
             PieLabelRecord current = getPieLabelRecord(i);
             PieLabelRecord previous = getPieLabelRecord(i - 1);
             if (previous.getUpperY() > current.getLowerY()) {
-                double highestAllowedY = minY + halfHeight(previous);
+                double highestAllowedY = space.getMinY() + halfHeight(previous);
                 double stackedAboveCurrent = current.getLowerY() - this.minGap
                         - halfHeight(previous);
                 previous.setAllocatedY(Math.max(highestAllowedY, stackedAboveCurrent));
@@ -173,16 +205,15 @@ public class PieLabelDistributor extends AbstractPieLabelDistributor {
      * Labels are spaced evenly in the available space in an attempt to
      * eliminate the overlaps.
      *
-     * @param minY  the minimum y value (in Java2D coordinate space).
-     * @param height  the height available for all labels.
+     * @param space  the available vertical layout space.
      */
-    protected void spreadEvenly(double minY, double height) {
-        double cursorY = minY;
+    protected void spreadEvenly(LayoutSpace space) {
+        double cursorY = space.getMinY();
         double sumOfLabelHeights = 0.0;
         for (int i = 0; i < this.labels.size(); i++) {
             sumOfLabelHeights += getPieLabelRecord(i).getLabelHeight();
         }
-        double gap = height - sumOfLabelHeights;
+        double gap = space.getHeight() - sumOfLabelHeights;
         if (this.labels.size() > 1) {
             gap = gap / (this.labels.size() - 1);
         }
